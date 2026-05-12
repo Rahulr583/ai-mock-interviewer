@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mock Interviewer - Login</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f5f7fa;
+    }
+
+    .auth-container {
+      width: 100%;
+      max-width: 410px;
+      padding: 16px;
+    }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .auth-header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2563eb;
+    }
+
+    .auth-header p {
+      color: #666;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .auth-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 32px;
+    }
+
+    .tab-switch {
+      display: flex;
+      border-bottom: 2px solid #e2e8f0;
+      margin-bottom: 22px;
+    }
+
+    .tab-switch button {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 9px 0;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #94a3b8;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+
+    .tab-switch button.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+
+    .form-tab {
+      display: none;
+    }
+
+    .form-tab.active {
+      display: block;
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-container">
+  <div class="auth-header">
+    <h1>MockAI Interviewer</h1>
+    <p>Practice job interviews with real AI feedback</p>
+  </div>
+
+  <div class="auth-card">
+    <!-- Tab buttons -->
+    <div class="tab-switch">
+      <button class="active" id="tab-login-btn" onclick="switchTab('login')">Login</button>
+      <button id="tab-reg-btn" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- Login form -->
+    <div class="form-tab active" id="tab-login">
+      <div class="alert alert-error" id="login-error" style="display:none;"></div>
+
+      <div class="form-group">
+        <label for="login-email">Email Address</label>
+        <input type="email" id="login-email" placeholder="you@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="login-pass">Password</label>
+        <input type="password" id="login-pass" placeholder="Enter your password" />
+      </div>
+
+      <button class="btn btn-primary btn-block" id="login-btn" onclick="handleLogin()">
+        Login
+      </button>
+    </div>
+
+    <!-- Register form -->
+    <div class="form-tab" id="tab-register">
+      <div class="alert alert-error" id="reg-error" style="display:none;"></div>
+
+      <div class="form-group">
+        <label for="reg-name">Full Name</label>
+        <input type="text" id="reg-name" placeholder="Your full name" />
+      </div>
+
+      <div class="form-group">
+        <label for="reg-email">Email Address</label>
+        <input type="email" id="reg-email" placeholder="you@example.com" />
+      </div>
+
+      <div class="form-group">
+        <label for="reg-pass">Password</label>
+        <input type="password" id="reg-pass" placeholder="Minimum 6 characters" />
+      </div>
+
+      <button class="btn btn-primary btn-block" id="reg-btn" onclick="handleRegister()">
+        Create Account
+      </button>
+    </div>
+
+    <div class="auth-footer">
+      Built with Node.js &bull; MySQL &bull; OpenAI API
+    </div>
+  </div>
+</div>
+
+<script src="js/helper.js"></script>
+<script>
+  // send user to dashboard if already logged in
+  redirectIfLoggedIn();
+
+  function switchTab(tab) {
+    document.getElementById('tab-login').classList.remove('active');
+    document.getElementById('tab-register').classList.remove('active');
+    document.getElementById('tab-login-btn').classList.remove('active');
+    document.getElementById('tab-reg-btn').classList.remove('active');
+
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('tab-' + tab + '-btn').classList.add('active');
+  }
+
+  async function handleLogin() {
+    var email = document.getElementById('login-email').value.trim();
+    var pass  = document.getElementById('login-pass').value;
+    var errEl = document.getElementById('login-error');
+    var btn   = document.getElementById('login-btn');
+
+    errEl.style.display = 'none';
+
+    if (!email || !pass) {
+      errEl.textContent = 'Please fill in all fields';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Logging in...';
+
+    try {
+      var data = await apiCall('/auth/login', 'POST', { email: email, password: pass });
+      saveAuth(data.token, data.user);
+      window.location.href = 'pages/dashboard.html';
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Login';
+    }
+  }
+
+  async function handleRegister() {
+    var name  = document.getElementById('reg-name').value.trim();
+    var email = document.getElementById('reg-email').value.trim();
+    var pass  = document.getElementById('reg-pass').value;
+    var errEl = document.getElementById('reg-error');
+    var btn   = document.getElementById('reg-btn');
+
+    errEl.style.display = 'none';
+
+    if (!name || !email || !pass) {
+      errEl.textContent = 'Please fill in all fields';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Creating account...';
+
+    try {
+      var data = await apiCall('/auth/register', 'POST', { name: name, email: email, password: pass });
+      saveAuth(data.token, data.user);
+      window.location.href = 'pages/dashboard.html';
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Create Account';
+    }
+  }
+
+  // press enter to submit
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    var loginActive = document.getElementById('tab-login').classList.contains('active');
+    if (loginActive) handleLogin();
+    else handleRegister();
+  });
+</script>
+</body>
+</html>

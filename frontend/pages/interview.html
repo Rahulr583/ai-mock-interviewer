@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Interview - Mock Interviewer</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .interview-wrap {
+      max-width: 740px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    /* top bar */
+    .top-bar {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 13px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      font-size: 14px;
+    }
+
+    .top-bar .session-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-bar .role-text {
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .q-number-badge {
+      background: #eff6ff;
+      color: #2563eb;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 10px;
+    }
+
+    /* question panel */
+    .question-panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .question-panel .q-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #2563eb;
+      margin-bottom: 8px;
+    }
+
+    .question-panel .q-text {
+      font-size: 16px;
+      color: #1e293b;
+      line-height: 1.65;
+    }
+
+    .question-panel .q-actions {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    /* answer panel */
+    .answer-panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .answer-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 11px;
+    }
+
+    .answer-top .a-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .mic-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mic-btn {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      color: #475569;
+      transition: all 0.15s;
+    }
+
+    .mic-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .mic-btn.on {
+      background: #fef2f2;
+      border-color: #fca5a5;
+      color: #dc2626;
+    }
+
+    .recording-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #dc2626;
+      display: none;
+      animation: blink-dot 1s ease-in-out infinite;
+    }
+
+    .mic-btn.on + .recording-dot {
+      display: inline-block;
+    }
+
+    @keyframes blink-dot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.2; }
+    }
+
+    #answer-box {
+      width: 100%;
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .char-info {
+      text-align: right;
+      font-size: 11px;
+      color: #aaa;
+      margin-top: 5px;
+    }
+
+    .submit-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    /* feedback panel */
+    .feedback-panel {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .feedback-panel.show {
+      display: block;
+    }
+
+    .feedback-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .feedback-top .f-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #15803d;
+    }
+
+    .score-pill {
+      background: #dcfce7;
+      color: #15803d;
+      padding: 3px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      display: none;
+    }
+
+    #feedback-text {
+      font-size: 14px;
+      color: #1e293b;
+      line-height: 1.75;
+      white-space: pre-wrap;
+    }
+
+    /* blinking cursor shown while streaming */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 14px;
+      background: #2563eb;
+      vertical-align: middle;
+      margin-left: 1px;
+      animation: cur 0.8s step-end infinite;
+    }
+
+    @keyframes cur {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
+
+    .next-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    /* end panel */
+    .end-panel {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 40px 24px;
+      text-align: center;
+      display: none;
+    }
+
+    .end-panel.show {
+      display: block;
+    }
+
+    .end-panel h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .end-panel p {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 22px;
+    }
+
+    .end-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="logo">Mock<span>AI</span></div>
+  <div class="nav-right">
+    <button class="btn btn-red btn-sm" onclick="confirmEnd()">End Interview</button>
+    <button class="btn btn-outline btn-sm" onclick="window.location.href='dashboard.html'">Dashboard</button>
+  </div>
+</div>
+
+<div class="interview-wrap">
+
+  <!-- top info bar -->
+  <div class="top-bar">
+    <div class="session-info">
+      <span class="role-text" id="top-role">Loading...</span>
+      <span class="tag" id="top-diff"></span>
+    </div>
+    <span class="q-number-badge" id="top-qnum">Question 1</span>
+  </div>
+
+  <!-- question -->
+  <div class="question-panel" id="q-panel">
+    <div class="q-label">Interview Question</div>
+    <div class="q-text" id="q-text">Loading question...</div>
+    <div class="q-actions">
+      <button class="btn btn-gray btn-sm" onclick="readQuestion()">🔊 Read Aloud</button>
+    </div>
+  </div>
+
+  <!-- answer -->
+  <div class="answer-panel" id="a-panel">
+    <div class="answer-top">
+      <span class="a-label">Your Answer</span>
+      <div class="mic-wrap">
+        <span class="text-muted" id="mic-status"></span>
+        <div class="recording-dot" id="rec-dot"></div>
+        <button class="mic-btn" id="mic-btn" onclick="toggleMic()">🎤 Speak</button>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:0;">
+      <textarea id="answer-box" placeholder="Type your answer here, or click Speak to use your microphone..."></textarea>
+    </div>
+    <div class="char-info"><span id="char-count">0</span> characters</div>
+    <div class="submit-row">
+      <button class="btn btn-gray btn-sm" id="skip-btn" onclick="skipQuestion()">Skip</button>
+      <button class="btn btn-primary" id="submit-btn" onclick="submitAnswer()">Submit Answer</button>
+    </div>
+  </div>
+
+  <!-- feedback (shown after submitting) -->
+  <div class="feedback-panel" id="f-panel">
+    <div class="feedback-top">
+      <span class="f-title">AI Feedback</span>
+      <span class="score-pill" id="score-pill"></span>
+    </div>
+    <div id="feedback-text"></div>
+    <div class="next-row" id="next-row" style="display:none;">
+      <button class="btn btn-primary" onclick="nextQuestion()">Next Question →</button>
+    </div>
+  </div>
+
+  <!-- shown when interview is ended -->
+  <div class="end-panel" id="end-panel">
+    <h2>Interview Completed!</h2>
+    <p>Your answers have been saved. You can now view the detailed results.</p>
+    <div class="end-btns">
+      <button class="btn btn-primary" id="view-results-btn">View Results</button>
+      <button class="btn btn-outline" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="../js/helper.js"></script>
+<script>
+  if (!requireAuth()) { throw new Error(); }
+
+  // read session and question from localStorage (set by dashboard)
+  var session  = JSON.parse(localStorage.getItem('curr_session')  || 'null');
+  var question = JSON.parse(localStorage.getItem('curr_question') || 'null');
+
+  if (!session || !question) {
+    window.location.href = 'dashboard.html';
+  }
+
+  var isRecording  = false;
+  var isStreaming  = false;
+  var recognition  = null;
+
+  // setup page
+  document.getElementById('top-role').textContent = session.job_role;
+  document.getElementById('top-diff').textContent = session.difficulty;
+  document.getElementById('top-diff').className   = 'tag ' + getDiffTag(session.difficulty);
+  showQuestion(question);
+
+  // character counter for textarea
+  document.getElementById('answer-box').addEventListener('input', function() {
+    document.getElementById('char-count').textContent = this.value.length;
+  });
+
+  function showQuestion(q) {
+    document.getElementById('q-text').textContent      = q.text;
+    document.getElementById('top-qnum').textContent    = 'Question ' + q.number;
+    document.getElementById('answer-box').value        = '';
+    document.getElementById('char-count').textContent  = '0';
+  }
+
+  // ---- Text to Speech (read question aloud) ----
+  function readQuestion() {
+    if (!('speechSynthesis' in window)) {
+      showToast('Speech not supported in this browser');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(question.text);
+    u.rate  = 0.95;
+    u.pitch = 1;
+    window.speechSynthesis.speak(u);
+  }
+
+  // ---- Speech Recognition (mic input) ----
+  function toggleMic() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      showToast('Voice input only works in Chrome or Edge');
+      return;
+    }
+
+    if (isRecording) {
+      stopMic();
+    } else {
+      startMic();
+    }
+  }
+
+  function startMic() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.continuous     = true;
+    recognition.interimResults = true;
+    recognition.lang           = 'en-US';
+
+    var textarea  = document.getElementById('answer-box');
+    var baseText  = textarea.value;
+
+    recognition.onresult = function(e) {
+      var interim = '';
+      var final   = baseText;
+
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          final += e.results[i][0].transcript + ' ';
+        } else {
+          interim = e.results[i][0].transcript;
+        }
+      }
+      textarea.value = final + interim;
+      document.getElementById('char-count').textContent = textarea.value.length;
+    };
+
+    recognition.onerror = function(e) {
+      showToast('Mic error: ' + e.error);
+      stopMic();
+    };
+
+    // auto restart if it stops on its own
+    recognition.onend = function() {
+      if (isRecording) recognition.start();
+    };
+
+    recognition.start();
+    isRecording = true;
+
+    document.getElementById('mic-btn').classList.add('on');
+    document.getElementById('mic-btn').textContent  = '⏹ Stop';
+    document.getElementById('rec-dot').style.display = 'inline-block';
+    document.getElementById('mic-status').textContent = 'Recording...';
+  }
+
+  function stopMic() {
+    if (recognition) recognition.stop();
+    isRecording = false;
+
+    document.getElementById('mic-btn').classList.remove('on');
+    document.getElementById('mic-btn').textContent   = '🎤 Speak';
+    document.getElementById('rec-dot').style.display = 'none';
+    document.getElementById('mic-status').textContent = '';
+  }
+
+  // ---- Submit Answer with SSE streaming ----
+  async function submitAnswer() {
+    var answerText = document.getElementById('answer-box').value.trim();
+
+    if (!answerText) {
+      showToast('Please type or speak your answer first');
+      return;
+    }
+
+    if (isStreaming) return;
+
+    if (isRecording) stopMic();
+
+    var submitBtn = document.getElementById('submit-btn');
+    var skipBtn   = document.getElementById('skip-btn');
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Analyzing...';
+    skipBtn.disabled = true;
+
+    // show feedback panel and clear old content
+    var fPanel = document.getElementById('f-panel');
+    var fText  = document.getElementById('feedback-text');
+    fPanel.classList.add('show');
+    fText.innerHTML = '<span class="cursor"></span>';
+    document.getElementById('score-pill').style.display = 'none';
+    document.getElementById('next-row').style.display   = 'none';
+
+    isStreaming = true;
+    var accumulated = '';
+
+    try {
+      // fetch with streaming - cant use apiCall() since that doesnt support SSE
+      var res = await fetch('http://localhost:5000/api/interview/submit-answer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + getToken()
+        },
+        body: JSON.stringify({
+          session_id:  session.id,
+          question_id: question.id,
+          answer_text: answerText
+        })
+      });
+
+      var reader  = res.body.getReader();
+      var decoder = new TextDecoder();
+
+      while (true) {
+        var result = await reader.read();
+        if (result.done) break;
+
+        var raw   = decoder.decode(result.value);
+        var lines = raw.split('\n');
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (!line.startsWith('data:')) continue;
+
+          var jsonStr = line.slice(5).trim();
+          if (!jsonStr) continue;
+
+          try {
+            var event = JSON.parse(jsonStr);
+
+            if (event.type === 'text') {
+              accumulated += event.content;
+              // show text + blinking cursor
+              fText.innerHTML = accumulated + '<span class="cursor"></span>';
+              fText.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            if (event.type === 'done') {
+              // remove cursor, show score
+              fText.innerHTML = accumulated;
+              var pill = document.getElementById('score-pill');
+              pill.textContent     = 'Score: ' + event.score + '/10';
+              pill.style.display   = 'inline-block';
+              pill.style.color     = getScoreColor(event.score);
+              document.getElementById('next-row').style.display = 'flex';
+            }
+
+            if (event.type === 'error') {
+              fText.innerHTML = '<span style="color:#dc2626">Error getting feedback. Please try again.</span>';
+            }
+          } catch (parseErr) {
+            // skip bad lines
+          }
+        }
+      }
+    } catch (err) {
+      fText.innerHTML = '<span style="color:#dc2626">Network error. Is the server running?</span>';
+    } finally {
+      isStreaming = false;
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Answer';
+      skipBtn.disabled = false;
+    }
+  }
+
+  // ---- Next Question ----
+  async function nextQuestion() {
+    var btn = document.querySelector('#next-row .btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Loading...';
+
+    try {
+      var data = await apiCall('/interview/next-question', 'POST', { session_id: session.id });
+      question = data.question;
+      showQuestion(question);
+
+      // hide feedback panel for new question
+      document.getElementById('f-panel').classList.remove('show');
+      document.getElementById('feedback-text').innerHTML = '';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      showToast(err.message);
+      btn.disabled = false;
+      btn.textContent = 'Next Question →';
+    }
+  }
+
+  // ---- Skip current question ----
+  async function skipQuestion() {
+    if (!confirm('Skip this question? No answer will be saved.')) return;
+    await nextQuestion();
+  }
+
+  // ---- End the interview ----
+  async function confirmEnd() {
+    if (!confirm('End the interview now? Your progress will be saved.')) return;
+
+    try {
+      await apiCall('/interview/end', 'POST', { session_id: session.id });
+
+      document.getElementById('a-panel').style.display = 'none';
+      document.getElementById('f-panel').classList.remove('show');
+      document.getElementById('q-panel').style.display = 'none';
+
+      var endPanel = document.getElementById('end-panel');
+      endPanel.classList.add('show');
+
+      document.getElementById('view-results-btn').onclick = function() {
+        window.location.href = 'results.html?id=' + session.id;
+      };
+
+      showToast('Interview ended. Good job!');
+    } catch (err) {
+      showToast('Could not end session: ' + err.message);
+    }
+  }
+</script>
+</body>
+</html>

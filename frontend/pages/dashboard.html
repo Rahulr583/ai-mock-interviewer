@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Mock Interviewer</title>
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .stats-row {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 16px 18px;
+    }
+
+    .stat-card .num {
+      font-size: 26px;
+      font-weight: 700;
+      color: #2563eb;
+      line-height: 1.2;
+    }
+
+    .stat-card .lbl {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 3px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .start-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 22px;
+      margin-bottom: 22px;
+    }
+
+    .start-card h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 16px;
+    }
+
+    .start-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .start-row .form-group {
+      margin-bottom: 0;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .start-row .diff-group {
+      max-width: 160px;
+    }
+
+    .history-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .history-card .history-title {
+      padding: 14px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e293b;
+      border-bottom: 1px solid #f1f5f9;
+      background: #f8fafc;
+    }
+
+    @media (max-width: 580px) {
+      .stats-row  { flex-direction: column; }
+      .start-row  { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<div class="navbar">
+  <div class="logo">Mock<span>AI</span></div>
+  <div class="nav-right">
+    <span class="nav-username" id="nav-user"></span>
+    <button class="btn btn-outline btn-sm" onclick="doLogout()">Logout</button>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- Stats section -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num" id="st-total">0</div>
+      <div class="lbl">Total Interviews</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="st-done">0</div>
+      <div class="lbl">Completed</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="st-avg">-</div>
+      <div class="lbl">Average Score</div>
+    </div>
+  </div>
+
+  <!-- Start new interview -->
+  <div class="start-card">
+    <h2>Start New Interview</h2>
+    <div class="start-row">
+      <div class="form-group">
+        <label>Job Role / Domain</label>
+        <input type="text" id="inp-role" placeholder="e.g. Frontend Developer, Java Developer..." />
+      </div>
+      <div class="form-group diff-group">
+        <label>Difficulty Level</label>
+        <select id="inp-diff">
+          <option value="easy">Easy</option>
+          <option value="medium" selected>Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
+      <div>
+        <button class="btn btn-primary" id="start-btn" onclick="startInterview()">
+          Start Interview
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History table -->
+  <div class="history-card">
+    <div class="history-title">Interview History</div>
+    <div id="history-area">
+      <div class="empty-state">
+        <div class="spinner"></div>
+        &nbsp; Loading...
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="../js/helper.js"></script>
+<script>
+  if (!requireAuth()) { throw new Error(); }
+
+  var user = getUser();
+  document.getElementById('nav-user').textContent = 'Hello, ' + user.name;
+
+  // load history on page load
+  fetchHistory();
+
+  async function fetchHistory() {
+    try {
+      var data = await apiCall('/interview/history');
+      renderHistory(data.sessions);
+    } catch (err) {
+      document.getElementById('history-area').innerHTML =
+        '<div class="empty-state">Could not load history.</div>';
+    }
+  }
+
+  function renderHistory(sessions) {
+    // fill stat cards
+    document.getElementById('st-total').textContent = sessions.length;
+
+    var completed = sessions.filter(function(s) { return s.status === 'completed'; });
+    document.getElementById('st-done').textContent = completed.length;
+
+    if (completed.length > 0) {
+      var sum = completed.reduce(function(acc, s) { return acc + parseFloat(s.score || 0); }, 0);
+      document.getElementById('st-avg').textContent = (sum / completed.length).toFixed(1) + '/10';
+    }
+
+    var area = document.getElementById('history-area');
+
+    if (sessions.length === 0) {
+      area.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div>No interviews yet. Start one above!</div>';
+      return;
+    }
+
+    var rows = sessions.map(function(s) {
+      var score     = parseFloat(s.score || 0).toFixed(1);
+      var color     = getScoreColor(score);
+      var diffCls   = getDiffTag(s.difficulty);
+      var statusCls = s.status === 'completed' ? 'tag-green' : (s.status === 'active' ? 'tag-blue' : 'tag-gray');
+
+      return '<tr onclick="openResult(' + s.id + ')">' +
+        '<td>' + s.job_role + '</td>' +
+        '<td><span class="tag ' + diffCls + '">' + s.difficulty + '</span></td>' +
+        '<td><span class="tag ' + statusCls + '">' + s.status + '</span></td>' +
+        '<td style="font-weight:700;color:' + color + '">' + score + '/10</td>' +
+        '<td>' + (s.total_questions || 0) + ' Q &nbsp;/ &nbsp;' + (s.total_answers || 0) + ' Ans</td>' +
+        '<td class="text-muted">' + niceDate(s.started_at) + '</td>' +
+        '</tr>';
+    }).join('');
+
+    area.innerHTML =
+      '<table class="data-table">' +
+      '<thead><tr>' +
+        '<th>Job Role</th><th>Difficulty</th><th>Status</th>' +
+        '<th>Score</th><th>Questions</th><th>Date</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '</table>';
+  }
+
+  async function startInterview() {
+    var role = document.getElementById('inp-role').value.trim();
+    var diff = document.getElementById('inp-diff').value;
+    var btn  = document.getElementById('start-btn');
+
+    if (!role) {
+      showToast('Please enter a job role first');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generating...';
+
+    try {
+      var data = await apiCall('/interview/start', 'POST', { job_role: role, difficulty: diff });
+      // store session + first question for interview page
+      localStorage.setItem('curr_session', JSON.stringify(data.session));
+      localStorage.setItem('curr_question', JSON.stringify(data.question));
+      window.location.href = 'interview.html';
+    } catch (err) {
+      showToast(err.message);
+      btn.disabled = false;
+      btn.textContent = 'Start Interview';
+    }
+  }
+
+  function openResult(id) {
+    window.location.href = 'results.html?id=' + id;
+  }
+
+  function doLogout() {
+    clearAuth();
+    window.location.href = '../index.html';
+  }
+</script>
+</body>
+</html>
