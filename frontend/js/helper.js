@@ -1,6 +1,6 @@
 // shared helper functions used across all pages
 
-var API_URL = 'http://localhost:5000/api';
+var API_URL = 'https://ai-mock-interviewer-kqje.onrender.com/api';
 
 function getToken() {
   return localStorage.getItem('mi_token');
